@@ -64,12 +64,60 @@ export interface Product {
   basePrice: Poisha;
 }
 
+// Promotions. The engine knows these four *kinds*; which groups, amounts and
+// codes they use comes from the menu data.
+
+/** Per unit: for every `every` units in `group`, the cheapest unit is free. */
+export interface FreeCheapestPerNPromo {
+  id: string;
+  name: string;
+  type: 'freeCheapestPerN';
+  group: GroupId;
+  every: number;
+}
+
+/** Per unit: percent off when every condition (units in a group) is met. */
+export interface ComboPercentPromo {
+  id: string;
+  name: string;
+  type: 'comboPercent';
+  conditions: { group: GroupId; minUnits: number }[];
+  percent: number;
+}
+
+/** Cart: fixed amount off when the subtotal reaches a threshold. */
+export interface CartThresholdPromo {
+  id: string;
+  name: string;
+  type: 'cartThreshold';
+  minSubtotal: Poisha;
+  amountOff: Poisha;
+}
+
+/** Cart: coupon code, percent off with a cap, valid strictly before a local time. */
+export interface CouponPromo {
+  id: string;
+  name: string;
+  type: 'coupon';
+  code: string;
+  percent: number;
+  cap: Poisha;
+  validBefore: string;
+  timeZone: string;
+}
+
+export type Promotion = FreeCheapestPerNPromo | ComboPercentPromo | CartThresholdPromo | CouponPromo;
+
 export interface Menu {
   currency: string;
   product: Product;
   groups: Group[];
   rules: Rule[];
   ingredients: Ingredient[];
+  promotions: Promotion[];
+  /** When two cart discounts are worth the same, the one listed first wins. */
+  cartDiscountTieBreak: string[];
+  vatPercent: number;
   /** Allowed cart quantity per item, e.g. 1-3. */
   quantity: { min: number; max: number };
   reservationSeconds: number;
