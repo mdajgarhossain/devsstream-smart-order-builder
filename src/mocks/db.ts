@@ -1,4 +1,6 @@
 import menuJson from './fixture/menu.json';
+import seedJson from './fixture/orders.seed.json';
+import { priceSeedOrders, type SeedOrder, type StoredOrder } from '../domain/orders';
 import { addUsage, type Usage } from '../domain/stock';
 import type { Config, Menu } from '../domain/types';
 
@@ -35,6 +37,10 @@ export interface ServerState {
   /** Add-to-cart idempotency key -> the reservation it created. */
   idempotency: Record<string, string>;
   nextItemNumber: number;
+  /** Every order, seed and new, with totals computed when it was placed. */
+  orders: StoredOrder[];
+  /** Checkout idempotency key -> the order it created. */
+  checkoutKeys: Record<string, string>;
 }
 
 function initialState(): ServerState {
@@ -44,6 +50,10 @@ function initialState(): ServerState {
     reservations: [],
     idempotency: {},
     nextItemNumber: 1,
+    // First start: load the seed orders, priced by our engine at each order's createdAt.
+    // They are past sales, so they do not take anything from today's stock.
+    orders: priceSeedOrders(seedJson.orders as SeedOrder[], menu),
+    checkoutKeys: {},
   };
 }
 
