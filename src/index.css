@@ -221,3 +221,106 @@ label.option {
   font-size: 0.9rem;
   margin: 0.2rem 0;
 }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.actions button,
+.price-preview button,
+.error button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.actions button.primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.1rem;
+}
+
+.actions button.primary:disabled {
+  background: #b9b2cc;
+}
+
+.cart {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.cart h2 {
+  margin-top: 0;
+}
+
+.cart-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0;
+}
+
+.cart-item-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-item-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.cart-item.is-expired .cart-item-main {
+  opacity: 0.6;
+}
+
+.countdown output {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.expired-label {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.coupon {
+  display: block;
+  margin: 0.75rem 0 0;
+}
+
+.coupon input {
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
