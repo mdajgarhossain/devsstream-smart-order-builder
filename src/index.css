@@ -167,3 +167,57 @@ label.option {
     text-align: left;
   }
 }
+
+.price-preview {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+
+.price-preview h3 {
+  margin: 0 0 0.5rem;
+}
+
+.breakdown {
+  margin: 0;
+}
+
+.breakdown-line {
+  border-bottom: 1px dashed var(--border);
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown-row dt,
+.breakdown-row dd {
+  margin: 0;
+}
+
+.breakdown-row.discount {
+  color: var(--ok);
+}
+
+.breakdown-row.strong,
+.breakdown-row.payable {
+  font-weight: 600;
+}
+
+.breakdown-row.payable {
+  border-top: 1px solid var(--border);
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  font-size: 1.1rem;
+}
+
+.note {
+  color: #8a5a00;
+  font-size: 0.9rem;
+  margin: 0.2rem 0;
+}

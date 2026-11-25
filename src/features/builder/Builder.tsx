@@ -3,7 +3,9 @@ import { optionAvailability, type OptionAvailability } from '../../domain/availa
 import { formatBdt } from '../../domain/money';
 import { validate } from '../../domain/rules';
 import { checkStock, formatShortages, ingredientUsage, stockHeadroom, type Usage } from '../../domain/stock';
+import type { CartInput } from '../../domain/pricing';
 import type { Config, Group, Menu, MenuOption, OptionId } from '../../domain/types';
+import { PricePreview } from '../pricing/PricePreview';
 import { describeGroup } from './describeGroup';
 
 interface BuilderProps {
@@ -32,6 +34,12 @@ export function Builder({ menu, stock, onAdd }: BuilderProps) {
     [config, menu, stock, qty],
   );
   const blocked = violations.length > 0 || !stockCheck.ok;
+
+  // The price shown while configuring always comes from the server (/price), never computed here.
+  const previewCart = useMemo<CartInput | null>(
+    () => (Object.keys(config).length > 0 ? { lines: [{ config, qty }] } : null),
+    [config, qty],
+  );
 
   const setUnits = (optionId: OptionId, units: number) =>
     setConfig((prev) => {
@@ -143,6 +151,8 @@ export function Builder({ menu, stock, onAdd }: BuilderProps) {
       ) : (
         <p className="ok">Looks good: ready to add.</p>
       )}
+
+      <PricePreview cart={previewCart} currency={menu.currency} vatPercent={menu.vatPercent} />
     </section>
   );
 }
