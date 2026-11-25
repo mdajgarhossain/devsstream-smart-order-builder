@@ -50,6 +50,27 @@ function activeOverride(config: Config, group: Group, rules: readonly Rule[]): O
   return winner;
 }
 
+/**
+ * How many more units of an option the group limits allow right now:
+ * the lowest of maxPerOption, the (override-aware) group max, and maxDistinct.
+ * Cross-group rules (requires/excludes) are reported by validate(), not here.
+ */
+export function ruleHeadroom(config: Readonly<Config>, optionId: OptionId, group: Group, rules: readonly Rule[]): number {
+  const current = config[optionId] ?? 0;
+  const override = activeOverride(config, group, rules);
+  const max = override ? override.max : (group.max ?? Infinity);
+  let headroom = max - groupUnits(config, group);
+
+  if (group.maxPerOption !== undefined) {
+    headroom = Math.min(headroom, group.maxPerOption - current);
+  }
+  if (group.maxDistinct !== undefined && current === 0) {
+    const distinct = group.options.filter((option) => isSelected(config, option.id)).length;
+    if (distinct >= group.maxDistinct) headroom = 0;
+  }
+  return Math.max(0, headroom);
+}
+
 function checkGroup(config: Config, group: Group, rules: readonly Rule[], index: OptionIndex): Violation[] {
   const violations: Violation[] = [];
   const total = groupUnits(config, group);
