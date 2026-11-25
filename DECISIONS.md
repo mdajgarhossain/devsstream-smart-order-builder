@@ -36,10 +36,12 @@ The server creates both. The id is the next number after the highest one in the 
 
 ## D6. Shape of a stored order
 
+TC-07's cart (B x1 + C x2, coupon typed at 11:00 Dhaka time), with the C line left out for brevity:
+
 ```json
 {
   "id": "ORD-1007",
-  "createdAt": "2026-11-25T04:59:59.000Z",
+  "createdAt": "2026-11-25T05:00:00.000Z",
   "source": "checkout",
   "paymentMethod": "card",
   "currency": "BDT",
