@@ -1,4 +1,5 @@
 import { syncServerTime } from './serverTime';
+import type { StoredOrder } from '../domain/orders';
 import type { CartInput, CartPrice } from '../domain/pricing';
 import type { Shortage, Usage } from '../domain/stock';
 import type { Config, Menu } from '../domain/types';
@@ -88,6 +89,9 @@ export const api = {
       body: JSON.stringify(body),
     }),
   removeItem: (id: string) => request<CartResponse>(`/api/cart/items/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  checkout: (body: { idempotencyKey: string; paymentMethod: string; couponCode: string | null }) =>
+    request<CartResponse & { order: StoredOrder }>('/api/checkout', { method: 'POST', body: JSON.stringify(body) }),
+  getOrders: () => request<{ orders: StoredOrder[]; serverTime: string }>('/api/orders'),
 };
 
 /** Error code sent by the server, e.g. "shortage" or "expired". */

@@ -110,6 +110,8 @@ export type Promotion = FreeCheapestPerNPromo | ComboPercentPromo | CartThreshol
 
 export interface Menu {
   currency: string;
+  /** The shop's time zone, used for showing dates and grouping orders by day. */
+  timeZone: string;
   product: Product;
   groups: Group[];
   rules: Rule[];
@@ -118,6 +120,8 @@ export interface Menu {
   /** When two cart discounts are worth the same, the one listed first wins. */
   cartDiscountTieBreak: string[];
   vatPercent: number;
+  /** Labels only, no payment data is collected. */
+  paymentMethods: string[];
   /** Allowed cart quantity per item, e.g. 1-3. */
   quantity: { min: number; max: number };
   reservationSeconds: number;

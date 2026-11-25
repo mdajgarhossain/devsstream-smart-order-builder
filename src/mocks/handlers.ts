@@ -2,7 +2,8 @@ import { delay, http, HttpResponse, type AnyHandler } from 'msw';
 import { priceCart } from '../domain/pricing';
 import { cartSnapshot, editItem, removeItem, reserveItem, type ServiceError } from './cartService';
 import { chaos } from './chaos';
-import { freeStock, menu, releaseExpired, updateState } from './db';
+import { checkout } from './checkoutService';
+import { freeStock, menu, readState, releaseExpired, updateState } from './db';
 import { parseCartInput } from './parseCart';
 import { serverNow } from './serverClock';
 
@@ -99,5 +100,26 @@ export const handlers: AnyHandler[] = [
     });
     if (!result.outcome.ok) return errorResponse(result.outcome.error.status, result.outcome.error.message, result.outcome.error);
     return HttpResponse.json(withServerTime(result.snapshot));
+  }),
+
+  // Pay: all active items -> one order. Idempotent by key.
+  http.post('/api/checkout', async ({ request }) => {
+    const body = await readBody(request);
+    await delay(chaos.cartLatencyMs());
+    const result = updateState((state) => {
+      const now = serverNow();
+      releaseExpired(state, now);
+      const outcome = checkout(state, body, now);
+      return { outcome, snapshot: cartSnapshot(state) };
+    });
+    if (!result.outcome.ok) return errorResponse(result.outcome.error.status, result.outcome.error.message, result.outcome.error);
+    const { order, created } = result.outcome.value;
+    return HttpResponse.json(withServerTime({ order, ...result.snapshot }), { status: created ? 201 : 200 });
+  }),
+
+  // Every order, seed + new, exactly as stored.
+  http.get('/api/orders', async () => {
+    await delay(chaos.cartLatencyMs());
+    return HttpResponse.json(withServerTime({ orders: readState().orders }));
   }),
 ];

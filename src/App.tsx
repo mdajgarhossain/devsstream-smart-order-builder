@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useMenu } from './features/builder/useMenu';
 import { Workspace } from './features/cart/Workspace';
+import { OrdersPanel } from './features/orders/OrdersPanel';
 
 export function App() {
   const { state, reload } = useMenu();
+  const [ordersVersion, setOrdersVersion] = useState(0);
 
   return (
     <main className="app">
@@ -16,7 +19,16 @@ export function App() {
           </button>
         </p>
       )}
-      {state.status === 'ready' && <Workspace menu={state.menu} initialStock={state.stock} />}
+      {state.status === 'ready' && (
+        <>
+          <Workspace
+            menu={state.menu}
+            initialStock={state.stock}
+            onOrderPlaced={() => setOrdersVersion((v) => v + 1)}
+          />
+          <OrdersPanel menu={state.menu} version={ordersVersion} />
+        </>
+      )}
     </main>
   );
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError, errorCode, type CartItem, type CartResponse } from '../../api/client';
 import { newIdempotencyKey } from '../../api/ids';
+import type { StoredOrder } from '../../domain/orders';
 import type { Usage } from '../../domain/stock';
 import type { Config } from '../../domain/types';
 import { useServerNow } from './useServerNow';
 
 export type Mutation = { ok: true } | { ok: false; status: number; code?: string; message: string };
+export type CheckoutResult = { ok: true; order: StoredOrder } | Extract<Mutation, { ok: false }>;
 
 export function isExpired(item: CartItem, now: number): boolean {
   return item.status === 'expired' || item.expiresAt <= now;
@@ -109,6 +111,35 @@ export function useCart() {
     [apply, fail],
   );
 
+  // Pay: one idempotency key per attempt (same items, method and coupon), reused on Retry.
+  const payAttempt = useRef<{ fingerprint: string; key: string; promise?: Promise<CheckoutResult> } | null>(null);
+
+  const checkout = useCallback(
+    (paymentMethod: string, couponCode: string): Promise<CheckoutResult> => {
+      const activeIds = items.filter((item) => item.status === 'active').map((item) => item.id);
+      const fingerprint = JSON.stringify({ activeIds, paymentMethod, couponCode });
+      if (payAttempt.current?.fingerprint !== fingerprint) {
+        payAttempt.current = { fingerprint, key: newIdempotencyKey() };
+      }
+      const attempt = payAttempt.current;
+      if (attempt.promise) return attempt.promise;
+
+      attempt.promise = api
+        .checkout({ idempotencyKey: attempt.key, paymentMethod, couponCode: couponCode.trim() || null })
+        .then((response): CheckoutResult => {
+          apply(response);
+          if (payAttempt.current === attempt) payAttempt.current = null;
+          return { ok: true, order: response.order };
+        })
+        .catch((error: unknown) => {
+          attempt.promise = undefined;
+          return fail(error) as Extract<Mutation, { ok: false }>;
+        });
+      return attempt.promise;
+    },
+    [items, apply, fail],
+  );
+
   const remove = useCallback(
     (id: string): Promise<Mutation> =>
       api
@@ -121,5 +152,5 @@ export function useCart() {
     [apply, fail],
   );
 
-  return { items, stock, loadError, now, refresh, add, update, remove };
+  return { items, stock, loadError, now, refresh, add, update, remove, checkout };
 }

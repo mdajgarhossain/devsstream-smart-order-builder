@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import type { CartItem } from '../../api/client';
 import type { CartInput } from '../../domain/pricing';
 import type { Menu } from '../../domain/types';
@@ -16,9 +17,27 @@ interface CartPanelProps {
   onCouponChange: (code: string) => void;
   onEdit: (id: string) => void;
   onRemove: (id: string) => void;
+  onPay: (paymentMethod: string) => void;
+  /** A Pay request is in flight: the button is disabled so a second click does nothing. */
+  paying: boolean;
+  /** Result of the last Pay (receipt or error). */
+  payNotice?: ReactNode;
 }
 
-export function CartPanel({ menu, items, now, editingId, couponCode, onCouponChange, onEdit, onRemove }: CartPanelProps) {
+export function CartPanel({
+  menu,
+  items,
+  now,
+  editingId,
+  couponCode,
+  onCouponChange,
+  onEdit,
+  onRemove,
+  onPay,
+  paying,
+  payNotice,
+}: CartPanelProps) {
+  const [paymentMethod, setPaymentMethod] = useState(menu.paymentMethods[0] ?? '');
   const active = items.filter((item) => !isExpired(item, now));
   const priceInput: CartInput | null =
     active.length > 0 ? { lines: active.map(({ config, qty }) => ({ config, qty })), couponCode } : null;
@@ -75,8 +94,33 @@ export function CartPanel({ menu, items, now, editingId, couponCode, onCouponCha
             title="Cart total"
             emptyText="No active items to price."
           />
+          <fieldset className="pay">
+            <legend>Payment method (label only, no payment details are collected)</legend>
+            {menu.paymentMethods.map((method) => (
+              <label key={method}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value={method}
+                  checked={paymentMethod === method}
+                  onChange={() => setPaymentMethod(method)}
+                />{' '}
+                {method}
+              </label>
+            ))}
+            <button
+              type="button"
+              className="primary"
+              disabled={active.length === 0 || paying}
+              aria-busy={paying}
+              onClick={() => onPay(paymentMethod)}
+            >
+              Pay
+            </button>
+          </fieldset>
         </>
       )}
+      {payNotice}
     </section>
   );
 }
