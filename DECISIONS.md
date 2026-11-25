@@ -17,3 +17,7 @@ TC-06 by hand, in poisha:
 | Discounted subtotal | 165,950 - 15,000 | 150,950 |
 | VAT | 150,950 x 5 / 100 = 7,547.5, half-up to the nearest poisha | **7,548 (75.48)** |
 | Payable | 150,950 + 7,548 = 158,498 (1,584.98), half-up to whole BDT | **1,585** |
+
+## D2. When is a price locked?
+
+At checkout. Until Pay, the cart is always priced again by the server, using the server clock at that moment, so it reflects the promotions that apply right now. That is what TC-06 and TC-07 describe: the same cart gets C2 at 10:59:59 and falls back to C1 at 11:00:00, so locking at Add to cart would contradict TC-07. When an entered coupon stops applying, the breakdown keeps the code and says why ("not valid at this time") instead of silently dropping it. The order stores the totals computed at the moment of Pay, and those never change afterwards.
