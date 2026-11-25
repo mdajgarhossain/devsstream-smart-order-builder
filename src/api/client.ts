@@ -1,4 +1,5 @@
 import { syncServerTime } from './serverTime';
+import type { CartInput, CartPrice } from '../domain/pricing';
 import type { Usage } from '../domain/stock';
 import type { Menu } from '../domain/types';
 
@@ -47,6 +48,13 @@ export interface MenuResponse {
   serverTime: string;
 }
 
+export interface PriceResponse {
+  price: CartPrice;
+  serverTime: string;
+}
+
 export const api = {
   getMenu: (signal?: AbortSignal) => request<MenuResponse>('/api/menu', { signal }),
+  price: (cart: CartInput, signal?: AbortSignal) =>
+    request<PriceResponse>('/api/price', { method: 'POST', body: JSON.stringify(cart), signal }),
 };
