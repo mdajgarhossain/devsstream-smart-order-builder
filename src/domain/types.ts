@@ -65,10 +65,14 @@ export interface Product {
 }
 
 export interface Menu {
+  currency: string;
   product: Product;
   groups: Group[];
   rules: Rule[];
   ingredients: Ingredient[];
+  /** Allowed cart quantity per item, e.g. 1-3. */
+  quantity: { min: number; max: number };
+  reservationSeconds: number;
 }
 
 /** What the customer picked: option id -> units. Options with 0 may be omitted. */
