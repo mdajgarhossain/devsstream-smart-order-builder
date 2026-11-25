@@ -110,6 +110,8 @@ export type Promotion = FreeCheapestPerNPromo | ComboPercentPromo | CartThreshol
 
 export interface Menu {
   currency: string;
+  /** The shop's time zone, used for showing dates and grouping orders by day. */
+  timeZone: string;
   product: Product;
   groups: Group[];
   rules: Rule[];

@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "currency": "BDT",
   "moneyUnit": "poisha",
+  "timeZone": "Asia/Dhaka",
   "product": { "id": "breakfast", "name": "Build Your Breakfast", "basePrice": 25000 },
   "groups": [
     {

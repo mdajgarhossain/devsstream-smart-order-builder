@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { formatBdt } from '../../domain/money';
+import type { StoredOrder } from '../../domain/orders';
 import { addUsage, type Usage } from '../../domain/stock';
 import type { Config, Menu } from '../../domain/types';
 import { Builder } from '../builder/Builder';
@@ -17,13 +19,21 @@ interface Notice {
  * - failure (500/network): nothing was held, keep the choices, offer Retry (TC-14)
  * - reservation expired while editing: keep the choices, offer "Add as new item" (D3)
  */
-export function Workspace({ menu, initialStock }: { menu: Menu; initialStock: Usage }) {
+interface WorkspaceProps {
+  menu: Menu;
+  initialStock: Usage;
+  onOrderPlaced?: (order: StoredOrder) => void;
+}
+
+export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps) {
   const cart = useCart();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newBuilderKey, setNewBuilderKey] = useState(0);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [couponCode, setCouponCode] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [payNotice, setPayNotice] = useState<Notice | null>(null);
 
   const editing = editingId ? (cart.items.find((item) => item.id === editingId) ?? null) : null;
   const editingExpired = editing !== null && isExpired(editing, cart.now);
@@ -60,6 +70,28 @@ export function Workspace({ menu, initialStock }: { menu: Menu; initialStock: Us
     setNotice({ kind: 'error', message: result.message, retry: canRetry ? () => void submit(config, qty) : undefined });
   };
 
+  const pay = async (paymentMethod: string) => {
+    setPaying(true);
+    setPayNotice(null);
+    const result = await cart.checkout(paymentMethod, couponCode);
+    setPaying(false);
+
+    if (result.ok) {
+      const { order } = result;
+      if (editingId) finishBuilder();
+      setCouponCode('');
+      setNotice(null);
+      setPayNotice({
+        kind: 'info',
+        message: `Order ${order.id} placed: paid ${menu.currency} ${formatBdt(order.totals.payable)} by ${order.paymentMethod}.`,
+      });
+      onOrderPlaced?.(order);
+      return;
+    }
+    const canRetry = result.status === 0 || result.status >= 500;
+    setPayNotice({ kind: 'error', message: result.message, retry: canRetry ? () => void pay(paymentMethod) : undefined });
+  };
+
   const remove = async (id: string) => {
     if (id === editingId) finishBuilder();
     const result = await cart.remove(id);
@@ -74,16 +106,7 @@ export function Workspace({ menu, initialStock }: { menu: Menu; initialStock: Us
           new item, or cancel.
         </p>
       )}
-      {notice && (
-        <p role={notice.kind === 'error' ? 'alert' : 'status'} className={notice.kind === 'error' ? 'error' : 'ok'}>
-          {notice.message}{' '}
-          {notice.retry && (
-            <button type="button" onClick={notice.retry}>
-              Retry
-            </button>
-          )}
-        </p>
-      )}
+      <NoticeView notice={notice} />
     </>
   );
 
@@ -113,7 +136,24 @@ export function Workspace({ menu, initialStock }: { menu: Menu; initialStock: Us
           setEditingId(id);
         }}
         onRemove={(id) => void remove(id)}
+        onPay={(method) => void pay(method)}
+        paying={paying}
+        payNotice={<NoticeView notice={payNotice} />}
       />
     </div>
+  );
+}
+
+function NoticeView({ notice }: { notice: Notice | null }) {
+  if (!notice) return null;
+  return (
+    <p role={notice.kind === 'error' ? 'alert' : 'status'} className={notice.kind === 'error' ? 'error' : 'ok'}>
+      {notice.message}{' '}
+      {notice.retry && (
+        <button type="button" onClick={notice.retry}>
+          Retry
+        </button>
+      )}
+    </p>
   );
 }
