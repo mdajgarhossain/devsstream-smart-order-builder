@@ -11,7 +11,7 @@ export function withServerTime<T extends object>(body: T) {
   return { ...body, serverTime: new Date(serverNow()).toISOString() };
 }
 
-function errorResponse(status: number, message: string, extra: Partial<ServiceError> = {}) {
+function errorResponse(status: number, message: string, extra: Partial<ServiceError> | { code: string } = {}) {
   return HttpResponse.json(withServerTime({ error: { ...extra, message } }), { status });
 }
 
@@ -69,7 +69,7 @@ export const handlers: AnyHandler[] = [
       const { item, created } = result.outcome.value;
       return HttpResponse.json(withServerTime({ item, ...result.snapshot }), { status: created ? 201 : 200 });
     } catch {
-      return errorResponse(500, 'Could not reserve this item. Nothing was held, please retry.', { code: 'invalid' });
+      return errorResponse(500, 'Could not reserve this item. Nothing was held, please retry.', { code: 'server_error' });
     }
   }),
 
