@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "currency": "BDT",
+  "moneyUnit": "poisha",
+  "product": { "id": "breakfast", "name": "Build Your Breakfast", "basePrice": 25000 },
+  "groups": [
+    {
+      "id": "bread",
+      "name": "Bread",
+      "min": 1,
+      "max": 1,
+      "options": [
+        { "id": "toast", "name": "Toast", "price": 0, "ingredients": { "toast": 1 } },
+        { "id": "paratha", "name": "Paratha", "price": 2000, "ingredients": { "paratha": 1 } },
+        { "id": "croissant", "name": "Croissant", "price": 6000, "ingredients": { "croissant": 1 } }
+      ]
+    },
+    {
+      "id": "eggs",
+      "name": "Eggs",
+      "min": 2,
+      "max": 6,
+      "step": 2,
+      "options": [
+        { "id": "fried", "name": "Fried", "price": 3000, "ingredients": { "egg": 1 } },
+        { "id": "scrambled", "name": "Scrambled", "price": 3500, "ingredients": { "egg": 1 } },
+        { "id": "omelette", "name": "Omelette", "price": 7000, "ingredients": { "egg": 2 } }
+      ]
+    },
+    {
+      "id": "protein",
+      "name": "Protein",
+      "min": 1,
+      "max": 3,
+      "options": [
+        { "id": "sausage", "name": "Chicken Sausage", "price": 6000, "ingredients": { "sausage": 1 } },
+        { "id": "bacon", "name": "Beef Bacon", "price": 9000, "ingredients": { "bacon": 1 } },
+        { "id": "tofu", "name": "Tofu", "price": 5000, "ingredients": { "tofu": 1 } }
+      ]
+    },
+    {
+      "id": "extras",
+      "name": "Extras",
+      "min": 0,
+      "max": 4,
+      "options": [
+        { "id": "hashbrown", "name": "Hash Brown", "price": 4000, "ingredients": { "hashbrown": 1 } },
+        { "id": "mushroom", "name": "Mushroom", "price": 3000, "ingredients": { "mushroom": 1 } },
+        { "id": "beans", "name": "Baked Beans", "price": 2500, "ingredients": { "beans": 1 } },
+        { "id": "cheese", "name": "Cheese", "price": 3500, "ingredients": { "cheese": 1 } }
+      ]
+    },
+    {
+      "id": "sauce",
+      "name": "Sauce",
+      "min": 0,
+      "maxDistinct": 2,
+      "maxPerOption": 1,
+      "options": [
+        { "id": "ketchup", "name": "Ketchup", "price": 0, "ingredients": {} },
+        { "id": "hollandaise", "name": "Hollandaise", "price": 2500, "ingredients": { "hollandaise": 1 } },
+        { "id": "chili", "name": "Chili", "price": 1000, "ingredients": {} }
+      ]
+    }
+  ],
+  "rules": [
+    { "id": "R1", "type": "requires", "option": "hollandaise", "anyOf": ["scrambled", "omelette"] },
+    { "id": "R2", "type": "excludes", "option": "tofu", "noneOf": ["sausage", "bacon"] },
+    { "id": "R3", "type": "overrideLimit", "option": "croissant", "group": "extras", "max": 2 },
+    { "id": "R4", "type": "excludes", "option": "chili", "noneOf": ["hollandaise"] }
+  ],
+  "ingredients": [
+    { "id": "egg", "name": "egg", "stock": 10 },
+    { "id": "sausage", "name": "sausage", "stock": 4 },
+    { "id": "bacon", "name": "bacon", "stock": 3 },
+    { "id": "tofu", "name": "tofu", "stock": 5 },
+    { "id": "croissant", "name": "croissant", "stock": 2 },
+    { "id": "paratha", "name": "paratha", "stock": 10 },
+    { "id": "toast", "name": "toast", "stock": 20 },
+    { "id": "hashbrown", "name": "hash brown", "stock": 6 },
+    { "id": "mushroom", "name": "mushroom", "stock": 6 },
+    { "id": "beans", "name": "baked beans", "stock": 8 },
+    { "id": "cheese", "name": "cheese", "stock": 4 },
+    { "id": "hollandaise", "name": "hollandaise", "stock": 5 }
+  ],
+  "promotions": [
+    { "id": "P2", "name": "Extras deal", "type": "freeCheapestPerN", "group": "extras", "every": 3 },
+    {
+      "id": "P1",
+      "name": "Combo",
+      "type": "comboPercent",
+      "conditions": [
+        { "group": "eggs", "minUnits": 4 },
+        { "group": "protein", "minUnits": 2 }
+      ],
+      "percent": 10
+    },
+    { "id": "C1", "name": "Big order", "type": "cartThreshold", "minSubtotal": 120000, "amountOff": 10000 },
+    {
+      "id": "C2",
+      "name": "Morning coupon",
+      "type": "coupon",
+      "code": "MORNING15",
+      "percent": 15,
+      "cap": 15000,
+      "validBefore": "11:00",
+      "timeZone": "Asia/Dhaka"
+    }
+  ],
+  "cartDiscountTieBreak": ["C1", "C2"],
+  "vatPercent": 5,
+  "quantity": { "min": 1, "max": 3 },
+  "reservationSeconds": 300
+}
