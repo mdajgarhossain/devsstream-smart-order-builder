@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { optionAvailability, type OptionAvailability } from '../../domain/availability';
 import { formatBdt } from '../../domain/money';
 import { validate } from '../../domain/rules';
@@ -12,7 +12,16 @@ interface BuilderProps {
   menu: Menu;
   /** Stock free for this configuration (for an edit, including the item's own allocation). */
   stock: Usage;
-  onAdd?: (config: Config, qty: number) => void;
+  /** Starting point when editing a cart item. */
+  initial?: { config: Config; qty: number };
+  title?: string;
+  submitLabel?: string;
+  /** A request is in flight: the submit button is disabled so repeat clicks do nothing. */
+  pending?: boolean;
+  onSubmit?: (config: Config, qty: number) => void;
+  onCancel?: () => void;
+  /** Server feedback shown under the button (shortages, failures, expiry). */
+  notice?: ReactNode;
 }
 
 /**
@@ -20,9 +29,19 @@ interface BuilderProps {
  * Part A (validate) decides whether Add to Cart is allowed; Part B (stock) decides how many
  * more units each option can take and lists shortages.
  */
-export function Builder({ menu, stock, onAdd }: BuilderProps) {
-  const [config, setConfig] = useState<Config>({});
-  const [qty, setQty] = useState(menu.quantity.min);
+export function Builder({
+  menu,
+  stock,
+  initial,
+  title,
+  submitLabel = 'Add to Cart',
+  pending = false,
+  onSubmit,
+  onCancel,
+  notice,
+}: BuilderProps) {
+  const [config, setConfig] = useState<Config>(() => initial?.config ?? {});
+  const [qty, setQty] = useState(() => initial?.qty ?? menu.quantity.min);
 
   const violations = useMemo(() => validate(config, menu.groups, menu.rules), [config, menu]);
   const availability = useMemo(
@@ -62,7 +81,7 @@ export function Builder({ menu, stock, onAdd }: BuilderProps) {
   return (
     <section className="builder" aria-label="Order builder">
       <header className="builder-header">
-        <h2>{menu.product.name}</h2>
+        <h2>{title ?? menu.product.name}</h2>
         <p className="muted">
           Base price {menu.currency} {formatBdt(menu.product.basePrice)}
         </p>
@@ -136,10 +155,25 @@ export function Builder({ menu, stock, onAdd }: BuilderProps) {
             ))}
           </select>
         </label>
-        <button type="button" className="primary" disabled={blocked} onClick={() => onAdd?.(config, qty)}>
-          Add to Cart
-        </button>
+        <span className="actions">
+          {onCancel && (
+            <button type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+          <button
+            type="button"
+            className="primary"
+            disabled={blocked || pending}
+            aria-busy={pending}
+            onClick={() => onSubmit?.(config, qty)}
+          >
+            {submitLabel}
+          </button>
+        </span>
       </div>
+      {pending && <p className="muted">Saving…</p>}
+      {notice}
 
       {blocked ? (
         <ul className="issues" aria-label="Why this can't be added yet">

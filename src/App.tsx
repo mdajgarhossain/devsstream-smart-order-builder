@@ -1,5 +1,5 @@
-import { Builder } from './features/builder/Builder';
 import { useMenu } from './features/builder/useMenu';
+import { Workspace } from './features/cart/Workspace';
 
 export function App() {
   const { state, reload } = useMenu();
@@ -16,7 +16,7 @@ export function App() {
           </button>
         </p>
       )}
-      {state.status === 'ready' && <Builder menu={state.menu} stock={state.stock} />}
+      {state.status === 'ready' && <Workspace menu={state.menu} initialStock={state.stock} />}
     </main>
   );
 }

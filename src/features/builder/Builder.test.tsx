@@ -36,10 +36,10 @@ describe('Builder', () => {
     expect(screen.getByText(/Eggs total must be 2-6 in steps of 2/)).toBeInTheDocument();
   });
 
-  it('passes the configuration and quantity to onAdd', async () => {
+  it('passes the configuration and quantity to onSubmit', async () => {
     const user = userEvent.setup();
-    const onAdd = vi.fn();
-    render(<Builder menu={menu} stock={fullStock} onAdd={onAdd} />);
+    const onSubmit = vi.fn();
+    render(<Builder menu={menu} stock={fullStock} onSubmit={onSubmit} />);
 
     await user.click(screen.getByRole('radio', { name: /Paratha/ }));
     await addUnits(user, 'Fried', 2);
@@ -47,7 +47,7 @@ describe('Builder', () => {
     await user.selectOptions(screen.getByLabelText('Quantity'), '2');
     await user.click(addButton());
 
-    expect(onAdd).toHaveBeenCalledWith({ paratha: 1, fried: 2, tofu: 1 }, 2);
+    expect(onSubmit).toHaveBeenCalledWith({ paratha: 1, fried: 2, tofu: 1 }, 2);
   });
 
   it('shows how many more units fit and disables options at 0', async () => {

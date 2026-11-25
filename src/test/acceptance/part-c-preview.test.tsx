@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -47,12 +47,13 @@ describe('Section 9 - Part C async price preview', () => {
 
   it('debounces: quick changes send one request for the final configuration', async () => {
     const calls = priceHandler(() => 0);
-    const user = userEvent.setup();
     render(<Builder menu={menu} stock={fullStock} />);
 
-    await user.click(screen.getByRole('radio', { name: /Toast/ }));
-    await user.click(screen.getByRole('button', { name: 'Add one Scrambled' }));
-    await user.click(screen.getByRole('button', { name: 'Add one Scrambled' }));
+    // Three changes back to back (fireEvent is synchronous, so they land well within 300 ms
+    // even on a busy test machine).
+    fireEvent.click(screen.getByRole('radio', { name: /Toast/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add one Scrambled' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add one Scrambled' }));
 
     expect(await screen.findByLabelText('Payable', {}, { timeout: 2000 })).toHaveTextContent('BDT 336.00');
     expect(calls).toHaveLength(1);

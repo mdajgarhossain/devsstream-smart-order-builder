@@ -21,3 +21,11 @@ TC-06 by hand, in poisha:
 ## D2. When is a price locked?
 
 At checkout. Until Pay, the cart is always priced again by the server, using the server clock at that moment, so it reflects the promotions that apply right now. That is what TC-06 and TC-07 describe: the same cart gets C2 at 10:59:59 and falls back to C1 at 11:00:00, so locking at Add to cart would contradict TC-07. When an entered coupon stops applying, the breakdown keeps the code and says why ("not valid at this time") instead of silently dropping it. The order stores the totals computed at the moment of Pay, and those never change afterwards.
+
+## D1. Two tabs, tab B takes the last eggs while tab A is editing
+
+Saving an edit is one PUT, and the server re-checks stock at that moment, with the item's own allocation counted as available to itself. If the new configuration no longer fits, the server answers 409 with every shortage ("Short: 2 egg") and changes nothing, so tab A's original reservation is still intact. Tab A stays in the edit form with every choice kept, shows the shortage with a note that stock changed (maybe in another tab), and takes the fresh free-stock numbers from the response. The user loses nothing. They can lower the eggs and save again, or cancel and keep the old item. The client's own stock numbers are only a hint; the server's check is the one that counts.
+
+## D3. The reservation expires in the middle of an edit
+
+The unsaved changes stay in the form. The countdown runs on server time, so when it reaches zero the screen says the reservation expired and its stock was released, and the Save button becomes "Add as new item". That button tries a fresh reservation with the same choices against the current stock (and shows a shortage if it no longer fits). If Save was pressed right at the boundary, the server answers 410 and the same message appears. The old item stays in the cart as read-only, with Remove only. Editing does not extend a reservation; otherwise a user could hold stock forever by saving every few minutes.
