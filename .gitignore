@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+*.log
+
+# local env (real Gemini key lives here, never commit it)
+.env.local
+.env.*.local
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# personal study notes
+_learning/
