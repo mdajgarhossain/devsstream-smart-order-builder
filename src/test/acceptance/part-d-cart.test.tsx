@@ -143,4 +143,16 @@ describe('Part D decisions in the UI', () => {
     expect(within(second).getByText(/Hollandaise/)).toBeInTheDocument();
     expect(readState().reservations.map((r) => r.status)).toEqual(['expired', 'active']);
   });
+
+  it('Edit brings the form into focus (on a narrow screen it sits above the cart) and marks the item as being edited', async () => {
+    const user = await openApp();
+    await buildItemA(user);
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }));
+    const item = await screen.findByRole('listitem', { name: 'Cart item 1' });
+
+    await user.click(within(item).getByRole('button', { name: 'Edit' }));
+
+    expect(screen.getByRole('heading', { name: 'Edit item' })).toHaveFocus();
+    expect(within(item).getByRole('button', { name: 'Editing…' })).toBeDisabled();
+  });
 });

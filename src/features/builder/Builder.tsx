@@ -22,6 +22,8 @@ interface BuilderProps {
   onCancel?: () => void;
   /** Called with every change, so the parent can keep a draft (Part G). */
   onChange?: (config: Config, qty: number) => void;
+  /** Scroll the form into view and focus its heading when it appears (used for Edit). */
+  revealOnMount?: boolean;
   /** Server feedback shown under the button (shortages, failures, expiry). */
   notice?: ReactNode;
 }
@@ -41,10 +43,20 @@ export function Builder({
   onSubmit,
   onCancel,
   onChange,
+  revealOnMount = false,
   notice,
 }: BuilderProps) {
   const [config, setConfig] = useState<Config>(() => initial?.config ?? {});
   const [qty, setQty] = useState(() => initial?.qty ?? menu.quantity.min);
+
+  // On a narrow screen the cart sits below the builder, so an Edit click would change a form
+  // that is off screen. Bring the form into view and move focus to it.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!revealOnMount) return;
+    headingRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    headingRef.current?.focus({ preventScroll: true });
+  }, [revealOnMount]);
 
   const onChangeRef = useRef(onChange);
   useEffect(() => {
@@ -92,7 +104,9 @@ export function Builder({
   return (
     <section className="builder" aria-label="Order builder">
       <header className="builder-header">
-        <h2>{title ?? menu.product.name}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {title ?? menu.product.name}
+        </h2>
         <p className="muted">
           Base price {menu.currency} {formatBdt(menu.product.basePrice)}
         </p>

@@ -118,7 +118,7 @@ It returns the full breakdown, every eligible cart discount, and the coupon's st
 
 ## Tests
 
-`npm test` runs 147 tests. Section 9 has one file per part in [src/test/acceptance/](src/test/acceptance/):
+`npm test` runs 148 tests. Section 9 has one file per part in [src/test/acceptance/](src/test/acceptance/):
 
 | File | Covers |
 |---|---|

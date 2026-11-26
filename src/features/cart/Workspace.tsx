@@ -154,6 +154,7 @@ export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps)
         stock={builderStock}
         initial={builderInitial}
         title={editing ? 'Edit item' : undefined}
+        revealOnMount={editing !== null}
         submitLabel={editing ? (editingExpired ? 'Add as new item' : 'Save changes') : 'Add to Cart'}
         pending={pending}
         onSubmit={(config, qty) => void submit(config, qty)}
