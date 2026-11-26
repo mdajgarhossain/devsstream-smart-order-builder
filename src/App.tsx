@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ChatPanel } from './features/assistant/ChatPanel';
+import type { ChatModel } from './features/assistant/assistant';
+import { createGeminiModel, geminiApiKey } from './features/assistant/gemini';
 import { useMenu } from './features/builder/useMenu';
 import { Workspace } from './features/cart/Workspace';
 import { OrdersPanel } from './features/orders/OrdersPanel';
 
-export function App() {
+interface AppProps {
+  /** Tests pass a fake model (or null for "no key"). By default Gemini is used if a key is set. */
+  assistantModel?: ChatModel | null;
+}
+
+export function App({ assistantModel }: AppProps) {
   const { state, reload } = useMenu();
   const [ordersVersion, setOrdersVersion] = useState(0);
+  const model = useMemo(() => {
+    if (assistantModel !== undefined) return assistantModel;
+    const key = geminiApiKey();
+    return key ? createGeminiModel(key) : null;
+  }, [assistantModel]);
 
   return (
     <main className="app">
@@ -26,7 +39,10 @@ export function App() {
             initialStock={state.stock}
             onOrderPlaced={() => setOrdersVersion((v) => v + 1)}
           />
-          <OrdersPanel menu={state.menu} version={ordersVersion} />
+          <div className="bottom-row">
+            <OrdersPanel menu={state.menu} version={ordersVersion} />
+            <ChatPanel menu={state.menu} model={model} />
+          </div>
         </>
       )}
     </main>
