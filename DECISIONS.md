@@ -74,3 +74,27 @@ TC-07's cart (B x1 + C x2, coupon typed at 11:00 Dhaka time), with the C line le
 - `totals.discount` is the one cart discount that won. Totals are written once at Pay and never recomputed (D2).
 - Seed orders keep their original `+06:00` timestamps and get `"source": "seed"`. New orders use UTC ISO time from the server clock. Both parse to the same instant, and day grouping always happens in the shop's time zone (Asia/Dhaka, from the menu data).
 - The download wraps the list as `{ "schemaVersion": 1, "currency": "BDT", "moneyUnit": "poisha", "exportedAt": "...", "orders": [...] }`.
+
+## C2. Questions the sales assistant supports, and the function behind each
+
+Gemini only picks a function and phrases its result. Every number comes from these pure functions over the stored orders. Each call reads the orders fresh from `GET /api/orders`, so a checkout shows up in the next answer without a reload. The raw orders are never sent to the model.
+
+| Question | Function | Input | Output |
+|---|---|---|---|
+| How many orders? | `countOrders` | `{ date?: "YYYY-MM-DD" }` | `{ count }` |
+| What is the total revenue? | `totalRevenue` | `{ date? }` | `{ orders, revenue: "BDT 4,995.00", revenuePoisha }` |
+| What is the best-selling option? | `bestSellingOptions` | `{ limit?: number }` (default 3) | `{ top: [names tied for first], ranking: [{ option, units }] }` |
+| Revenue by payment method? | `revenueByPaymentMethod` | `{ date? }` | `{ methods: [{ method, orders, revenue, revenuePoisha }] }`, highest first |
+| What is the average order value? | `averageOrderValue` | `{ date? }` | `{ orders, average, averagePoisha }` |
+| How many orders actually got the coupon? | `couponUsage` | `{ code?: string }` | `{ entered, applied, appliedOrderIds, notApplied: [{ orderId, reason }] }` |
+| Which orders were placed on a given date? | `ordersOnDate` | `{ date: "YYYY-MM-DD" }` | `{ date, count, revenue, orders: [{ id, time, paymentMethod, payable }] }` |
+
+Definitions the functions use:
+- Revenue is the sum of `payable` (what customers paid, VAT included).
+- Units sold for an option = line quantity x option quantity, summed over all orders. Ties for first place are all returned.
+- The average is revenue / orders, rounded half-up to the poisha.
+- An order "got the coupon" only when its stored `coupon.applied` is true. Orders that typed a code but did not get it are listed with the reason.
+- Dates are calendar days in the shop's time zone (Asia/Dhaka, from the menu data).
+- Money is returned both as integer poisha and as a formatted "BDT x,xxx.xx" string, so the model copies text instead of doing arithmetic.
+
+Questions outside this list (customers, profit, staff, anything the orders don't record) have no function. The bot says it can't tell from the order data (see D5).
