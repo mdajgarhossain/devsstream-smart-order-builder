@@ -44,6 +44,8 @@ You only need the key for the sales assistant. Without one, the rest of the app 
 
 Open the app in two tabs to see the shared stock. Both tabs talk to the same mock server state. If one tab changes an item or the cart, the other tab gets a conflict on its next Edit, Remove or Pay, and reloads the cart instead of overwriting the change. A refresh keeps the item you were building or editing.
 
+**"Pricing service failed. Please retry." is expected now and then.** The brief asks for a slow, flaky price endpoint: 200-1500 ms of latency and 15% random failures. When a request fails, the price preview and the cart total say so instead of showing a stale price. Press **Retry**, or change any choice, to ask again. Checkout prices the cart on its own and never fails at random, so Pay is not affected.
+
 ## Architecture
 
 ```
