@@ -392,3 +392,107 @@ label.option {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.bottom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chat {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.chat h2 {
+  margin: 0 0 0.25rem;
+}
+
+.chat-log {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.chat-msg {
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  max-width: 90%;
+  white-space: pre-wrap;
+}
+
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+}
+
+.chat-msg.assistant {
+  align-self: flex-start;
+  background: #f1eefb;
+}
+
+.chat-msg.error {
+  align-self: flex-start;
+  background: #fdecea;
+  color: var(--danger);
+}
+
+.chat-tools {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.suggestions button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.chat-form input {
+  flex: 1;
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
