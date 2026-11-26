@@ -33,6 +33,7 @@ async function openApp(model: ChatModel | null) {
   const user = userEvent.setup();
   render(<App assistantModel={model} />);
   await screen.findByRole('heading', { name: 'Build Your Breakfast' });
+  await user.click(screen.getByRole('button', { name: 'Sales assistant' })); // open the floating panel
   return user;
 }
 
@@ -100,6 +101,26 @@ describe('Section 9 - Part F sales assistant', () => {
 
     expect(await conversation().findByText(CANNOT_VERIFY)).toBeInTheDocument();
     expect(conversation().queryByText(/Rahim/)).not.toBeInTheDocument();
+  });
+});
+
+describe('assistant panel', () => {
+  it('opens from the floating button with focus in the question box, closes on Escape, and keeps the conversation', async () => {
+    const user = await openApp(salesModel());
+    const button = screen.getByRole('button', { name: 'Sales assistant' });
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Your question')).toHaveFocus();
+
+    await ask(user, 'How many orders?');
+    await conversation().findByText('There are 6 orders.');
+
+    await user.keyboard('{Escape}');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+    expect(screen.queryByRole('region', { name: 'Sales assistant' })).not.toBeInTheDocument();
+
+    await user.click(button);
+    expect(conversation().getByText('There are 6 orders.')).toBeInTheDocument();
   });
 });
 

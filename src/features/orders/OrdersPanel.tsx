@@ -72,8 +72,18 @@ export function OrdersPanel({ menu, version }: OrdersPanelProps) {
                   {order.id} {order.source === 'seed' && <span className="muted">(seed)</span>}
                 </td>
                 <td>{formatTime(order.createdAt)}</td>
-                <td>{order.paymentMethod}</td>
-                <td>{order.coupon ? `${order.coupon.code} ${order.coupon.applied ? '✓' : `✗ (${order.coupon.reason})`}` : '—'}</td>
+                <td>
+                  <span className={`pill pay-${order.paymentMethod}`}>{order.paymentMethod}</span>
+                </td>
+                <td>
+                  {order.coupon ? (
+                    <span className={`pill ${order.coupon.applied ? 'pill-ok' : 'pill-bad'}`}>
+                      {`${order.coupon.code} ${order.coupon.applied ? '✓' : `✗ (${order.coupon.reason})`}`}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td className="num">
                   {order.currency} {formatBdt(order.totals.payable)}
                 </td>

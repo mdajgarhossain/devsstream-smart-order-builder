@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChatPanel } from './features/assistant/ChatPanel';
+import { AssistantLauncher } from './features/assistant/AssistantLauncher';
 import type { ChatModel } from './features/assistant/assistant';
 import { createGeminiModel, geminiApiKey } from './features/assistant/gemini';
 import { useMenu } from './features/builder/useMenu';
@@ -22,7 +22,10 @@ export function App({ assistantModel }: AppProps) {
 
   return (
     <main className="app">
-      <h1>Smart Order Builder</h1>
+      <header className="app-header">
+        <h1>Smart Order Builder</h1>
+        <p className="app-subtitle">Build a breakfast, reserve it, pay, and ask about sales.</p>
+      </header>
       {state.status === 'loading' && <p className="muted">Loading menu…</p>}
       {state.status === 'error' && (
         <p role="alert" className="error">
@@ -39,10 +42,8 @@ export function App({ assistantModel }: AppProps) {
             initialStock={state.stock}
             onOrderPlaced={() => setOrdersVersion((v) => v + 1)}
           />
-          <div className="bottom-row">
-            <OrdersPanel menu={state.menu} version={ordersVersion} />
-            <ChatPanel menu={state.menu} model={model} />
-          </div>
+          <OrdersPanel menu={state.menu} version={ordersVersion} />
+          <AssistantLauncher menu={state.menu} model={model} />
         </>
       )}
     </main>

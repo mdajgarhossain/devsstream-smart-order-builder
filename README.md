@@ -23,7 +23,7 @@ cp .env.example .env.local    # paste a Gemini API key into VITE_GEMINI_API_KEY
 npm run dev                   # http://localhost:5173
 ```
 
-You only need the key for the sales assistant. Without one, the rest of the app works and the chat panel says the key is missing.
+You only need the key for the sales assistant. Without one, the rest of the app works and the assistant panel says the key is missing, and its button shows a small red dot.
 
 | Command | What it does |
 |---|---|
@@ -40,7 +40,7 @@ You only need the key for the sales assistant. Without one, the rest of the app 
 1. **Build** an item. Every option shows how many more you can add and why it's blocked: "Out of stock" or "Limit reached". The issues list names every broken rule. The price preview updates as you click.
 2. **Add to Cart.** This reserves the ingredients for 5 minutes on the server clock, and each item shows a countdown. Items can be edited or removed. An expired item turns read-only and its stock goes back.
 3. **Pay.** Enter a coupon (`MORNING15`), pick a payment method, and press Pay. The order appears in the Orders table, and "Download orders.json" exports every order.
-4. **Ask the sales assistant.** Try "How many orders?" or "Which orders were placed on 21 November?". Each answer shows the function it came from.
+4. **Ask the sales assistant.** Open it from the **Sales assistant** button in the bottom-right corner (Escape closes it, and the conversation is kept). Try "How many orders?" or "Which orders were placed on 21 November?". Each answer shows the function it came from.
 
 Open the app in two tabs to see the shared stock. Both tabs talk to the same mock server state. If one tab changes an item or the cart, the other tab gets a conflict on its next Edit, Remove or Pay, and reloads the cart instead of overwriting the change. A refresh keeps the item you were building or editing.
 
