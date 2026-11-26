@@ -157,11 +157,12 @@ How the tests run:
 
 ## Hours spent
 
-**About 12 hours in total.**
+**About 13.5 hours in total.**
 
 | Phase | Time |
 |---|---|
 | Reading the brief, requirement analysis and planning, before the first commit. I worked through every requirement, test case and question by hand, and refined the step-by-step plan with an AI assistant. | about 2 h |
 | Building, testing and documenting: Parts A-F, the acceptance tests, DECISIONS.md, ANSWERS.md and this README. This includes reviewing and merging each part's pull request. | about 10 h |
+| Part G (bonus): versions and conflicts, refresh and drafts, their tests, and a manual check in two browser tabs. That check turned up the off-screen edit form, which is now fixed. | about 1.5 h |
 
-The git history covers only the second phase. It starts at the first commit (25 Nov, 18:52 Bangladesh time).
+The git history covers the second and third phases. It starts at the first commit (25 Nov, 18:52 Bangladesh time).
