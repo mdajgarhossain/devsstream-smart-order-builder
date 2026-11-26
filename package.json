@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "answers": "node scripts/answers.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",
