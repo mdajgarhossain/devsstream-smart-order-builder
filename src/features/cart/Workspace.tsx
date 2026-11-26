@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatBdt } from '../../domain/money';
 import type { StoredOrder } from '../../domain/orders';
 import { addUsage, type Usage } from '../../domain/stock';
 import type { Config, Menu } from '../../domain/types';
 import { Builder } from '../builder/Builder';
+import { clearDraft, loadDraft, saveDraft, type Draft } from '../builder/draft';
 import { CartPanel } from './CartPanel';
 import { isExpired, useCart, type Mutation } from './useCart';
 
@@ -27,6 +28,11 @@ interface WorkspaceProps {
 
 export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps) {
   const cart = useCart();
+  // Part G: the draft saved before a refresh. A new-item draft fills the first builder;
+  // an edit draft comes back once the cart has loaded, if the server still has that item live.
+  const [restored] = useState(() => loadDraft(menu));
+  const [editDraft, setEditDraft] = useState<Draft | null>(null);
+  const restoreChecked = useRef(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newBuilderKey, setNewBuilderKey] = useState(0);
   const [pending, setPending] = useState(false);
@@ -41,10 +47,33 @@ export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps)
   // Net difference: while editing a live item, what it already holds counts as available to it.
   const builderStock = editing && !editingExpired ? addUsage(free, editing.usage) : free;
 
+  useEffect(() => {
+    if (!cart.loaded || restoreChecked.current) return;
+    restoreChecked.current = true;
+    if (!restored?.itemId) return;
+    const item = cart.items.find((i) => i.id === restored.itemId);
+    if (item && !isExpired(item, cart.now)) {
+      setEditDraft(restored);
+      setEditingId(item.id);
+    } else {
+      setNotice({ kind: 'info', message: 'The item you were editing is no longer reserved, so its unsaved changes were dropped.' });
+    }
+  }, [cart.loaded, cart.items, cart.now, restored]);
+
   const finishBuilder = () => {
+    clearDraft();
+    setEditDraft(null);
     setEditingId(null);
     setNewBuilderKey((k) => k + 1);
   };
+
+  const builderInitial = editing
+    ? editDraft?.itemId === editing.id
+      ? editDraft
+      : { config: editing.config, qty: editing.qty }
+    : newBuilderKey === 0 && restored && restored.itemId === null
+      ? restored
+      : undefined;
 
   const submit = async (config: Config, qty: number) => {
     setPending(true);
@@ -59,6 +88,13 @@ export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps)
       return;
     }
     if (result.code === 'expired') return; // the expiry banner below explains it
+    if (result.code === 'version_conflict') {
+      setNotice({
+        kind: 'error',
+        message: `${result.message} Your changes are still here: save again to replace the other tab's version, or cancel to see it.`,
+      });
+      return;
+    }
     if (result.code === 'shortage') {
       setNotice({
         kind: 'error',
@@ -116,12 +152,13 @@ export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps)
         key={editing ? `edit-${editing.id}` : `new-${newBuilderKey}`}
         menu={menu}
         stock={builderStock}
-        initial={editing ? { config: editing.config, qty: editing.qty } : undefined}
+        initial={builderInitial}
         title={editing ? 'Edit item' : undefined}
         submitLabel={editing ? (editingExpired ? 'Add as new item' : 'Save changes') : 'Add to Cart'}
         pending={pending}
         onSubmit={(config, qty) => void submit(config, qty)}
         onCancel={editing ? finishBuilder : undefined}
+        onChange={(config, qty) => saveDraft({ itemId: editing?.id ?? null, config, qty })}
         notice={noticeView}
       />
       <CartPanel
@@ -133,6 +170,7 @@ export function Workspace({ menu, initialStock, onOrderPlaced }: WorkspaceProps)
         onCouponChange={setCouponCode}
         onEdit={(id) => {
           setNotice(null);
+          setEditDraft(null);
           setEditingId(id);
         }}
         onRemove={(id) => void remove(id)}

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { optionAvailability, type OptionAvailability } from '../../domain/availability';
 import { formatBdt } from '../../domain/money';
 import { validate } from '../../domain/rules';
@@ -20,6 +20,8 @@ interface BuilderProps {
   pending?: boolean;
   onSubmit?: (config: Config, qty: number) => void;
   onCancel?: () => void;
+  /** Called with every change, so the parent can keep a draft (Part G). */
+  onChange?: (config: Config, qty: number) => void;
   /** Server feedback shown under the button (shortages, failures, expiry). */
   notice?: ReactNode;
 }
@@ -38,10 +40,19 @@ export function Builder({
   pending = false,
   onSubmit,
   onCancel,
+  onChange,
   notice,
 }: BuilderProps) {
   const [config, setConfig] = useState<Config>(() => initial?.config ?? {});
   const [qty, setQty] = useState(() => initial?.qty ?? menu.quantity.min);
+
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+  useEffect(() => {
+    onChangeRef.current?.(config, qty);
+  }, [config, qty]);
 
   const violations = useMemo(() => validate(config, menu.groups, menu.rules), [config, menu]);
   const availability = useMemo(
