@@ -98,3 +98,7 @@ Definitions the functions use:
 - Money is returned both as integer poisha and as a formatted "BDT x,xxx.xx" string, so the model copies text instead of doing arithmetic.
 
 Questions outside this list (customers, profit, staff, anything the orders don't record) have no function. The bot says it can't tell from the order data (see D5).
+
+## D5. "Who is our best customer?" when orders store no customer
+
+The bot says it can't know. Orders hold no customer name, phone or id, so the honest answer is that the order data can't tell who the best customer is, followed by what it can answer instead (revenue, best-selling option, orders on a date, and so on). There are three layers that stop it from inventing a name. First, there is no tool that returns people, and the data has none to return. Second, the system instruction says orders contain no customer information and tells the model never to name or describe a customer. Third, a check in code compares every number in the reply with the numbers the tools actually returned, and replaces any reply with an unsourced figure with a safe "can't answer from the order data" message. A model could in theory still make up a bare name with no number, so that case rests on the instruction and temperature 0. In my live test with Gemini it declined with no tool call. The UI also shows which function each answer came from, so an answer with no source is visible.
