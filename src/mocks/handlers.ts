@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse, type AnyHandler } from 'msw';
 import { priceCart } from '../domain/pricing';
-import { cartSnapshot, editItem, removeItem, reserveItem, type ServiceError } from './cartService';
+import { cartSnapshot, dropExpired, editItem, removeItem, reserveItem, type CartSnapshot, type ServiceError } from './cartService';
 import { chaos } from './chaos';
 import { checkout } from './checkoutService';
 import { freeStock, menu, readState, releaseExpired, updateState } from './db';
@@ -14,6 +14,11 @@ export function withServerTime<T extends object>(body: T) {
 
 function errorResponse(status: number, message: string, extra: Partial<ServiceError> | { code: string } = {}) {
   return HttpResponse.json(withServerTime({ error: { ...extra, message } }), { status });
+}
+
+/** Cart errors carry the fresh cart too, so a stale tab reloads from the same answer (Part G). */
+function cartError(error: ServiceError, snapshot: CartSnapshot) {
+  return HttpResponse.json(withServerTime({ error, ...snapshot }), { status: error.status });
 }
 
 async function readBody(request: Request): Promise<Record<string, unknown>> {
@@ -55,6 +60,17 @@ export const handlers: AnyHandler[] = [
     return HttpResponse.json(withServerTime(snapshot));
   }),
 
+  // Part G: called on page load. Only still-valid reservations survive a refresh.
+  http.delete('/api/cart/expired', async () => {
+    await delay(chaos.cartLatencyMs());
+    const snapshot = updateState((state) => {
+      releaseExpired(state, serverNow());
+      dropExpired(state);
+      return cartSnapshot(state);
+    });
+    return HttpResponse.json(withServerTime(snapshot));
+  }),
+
   // Add to cart: atomic reservation + idempotency key.
   http.post('/api/cart/items', async ({ request }) => {
     const body = await readBody(request);
@@ -83,22 +99,21 @@ export const handlers: AnyHandler[] = [
       const outcome = editItem(state, String(params.id), body);
       return { outcome, snapshot: cartSnapshot(state) };
     });
-    if (!result.outcome.ok) {
-      return HttpResponse.json(withServerTime({ error: result.outcome.error, ...result.snapshot }), {
-        status: result.outcome.error.status,
-      });
-    }
+    if (!result.outcome.ok) return cartError(result.outcome.error, result.snapshot);
     return HttpResponse.json(withServerTime({ item: result.outcome.value.item, ...result.snapshot }));
   }),
 
-  http.delete('/api/cart/items/:id', async ({ params }) => {
+  // The item version comes as ?baseVersion=N (a DELETE has no body).
+  http.delete('/api/cart/items/:id', async ({ request, params }) => {
+    const raw = new URL(request.url).searchParams.get('baseVersion');
+    const baseVersion = raw === null ? undefined : Number(raw);
     await delay(chaos.cartLatencyMs());
     const result = updateState((state) => {
       releaseExpired(state, serverNow());
-      const outcome = removeItem(state, String(params.id));
+      const outcome = removeItem(state, String(params.id), baseVersion);
       return { outcome, snapshot: cartSnapshot(state) };
     });
-    if (!result.outcome.ok) return errorResponse(result.outcome.error.status, result.outcome.error.message, result.outcome.error);
+    if (!result.outcome.ok) return cartError(result.outcome.error, result.snapshot);
     return HttpResponse.json(withServerTime(result.snapshot));
   }),
 
@@ -112,7 +127,7 @@ export const handlers: AnyHandler[] = [
       const outcome = checkout(state, body, now);
       return { outcome, snapshot: cartSnapshot(state) };
     });
-    if (!result.outcome.ok) return errorResponse(result.outcome.error.status, result.outcome.error.message, result.outcome.error);
+    if (!result.outcome.ok) return cartError(result.outcome.error, result.snapshot);
     const { order, created } = result.outcome.value;
     return HttpResponse.json(withServerTime({ order, ...result.snapshot }), { status: created ? 201 : 200 });
   }),

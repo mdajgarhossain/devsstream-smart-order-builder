@@ -1,6 +1,6 @@
 import { toStoredOrder, type StoredOrder } from '../domain/orders';
 import { priceCart } from '../domain/pricing';
-import type { ServiceResult } from './cartService';
+import { CART_CHANGED, versionConflict, type ServiceResult } from './cartService';
 import { menu, type ServerState } from './db';
 
 /**
@@ -12,15 +12,20 @@ import { menu, type ServerState } from './db';
  */
 export function checkout(
   state: ServerState,
-  body: { idempotencyKey?: unknown; paymentMethod?: unknown; couponCode?: unknown },
+  body: { idempotencyKey?: unknown; paymentMethod?: unknown; couponCode?: unknown; baseVersion?: unknown },
   now: number,
 ): ServiceResult<{ order: StoredOrder; created: boolean }> {
   const key = body.idempotencyKey;
   if (typeof key !== 'string' || key.length === 0) return fail(400, 'idempotencyKey is required');
 
+  // A repeat of a Pay that already went through returns its order, whatever the cart version is now.
   const existingId = state.checkoutKeys[key];
   const existing = existingId ? state.orders.find((o) => o.id === existingId) : undefined;
   if (existing) return { ok: true, value: { order: existing, created: false } };
+
+  // Part G: never charge for a cart this tab has not seen.
+  const conflict = versionConflict(body.baseVersion, state.cartVersion, CART_CHANGED);
+  if (conflict) return conflict;
 
   const method = body.paymentMethod;
   if (typeof method !== 'string' || !menu.paymentMethods.includes(method)) {
@@ -53,6 +58,7 @@ export function checkout(
   state.reservations = []; // expired items hold nothing, so they go too: the cart is empty
   state.orders.push(order);
   state.checkoutKeys[key] = order.id;
+  state.cartVersion += 1;
   return { ok: true, value: { order, created: true } };
 }
 
