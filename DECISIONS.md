@@ -1,6 +1,6 @@
 # Decisions
 
-Answers to the checkpoints (C1-C2) and decision points (D1-D6) in the brief. Each one is written before or alongside the code it describes.
+Answers to the checkpoints (C1-C2) and decision points (D1-D6) in the brief, plus the choices behind the Part G bonus. Each one is written before or alongside the code it describes.
 
 ## C1. Why 679.50 as a float is risky, and how TC-06's VAT rounds
 
@@ -102,3 +102,26 @@ Questions outside this list (customers, profit, staff, anything the orders don't
 ## D5. "Who is our best customer?" when orders store no customer
 
 The bot says it can't know. Orders hold no customer name, phone or id, so the honest answer is that the order data can't tell who the best customer is, followed by what it can answer instead (revenue, best-selling option, orders on a date, and so on). There are three layers that stop it from inventing a name. First, there is no tool that returns people, and the data has none to return. Second, the system instruction says orders contain no customer information and tells the model never to name or describe a customer. Third, a check in code compares every number in the reply with the numbers the tools actually returned, and replaces any reply with an unsourced figure with a safe "can't answer from the order data" message. A model could in theory still make up a bare name with no number, so that case rests on the instruction and temperature 0. In my live test with Gemini it declined with no tool call. The UI also shows which function each answer came from, so an answer with no source is visible.
+
+## Part G (bonus). Refresh, versions and drafts
+
+The brief gives Part G as three bullets. These are the choices I made where it leaves room.
+
+**Refresh keeps only still-valid reservations.**
+- On page load, the app asks the server to drop expired items (`DELETE /api/cart/expired`), then shows what the server returns.
+- The server decides what has expired, using its own clock. The browser keeps no copy of the cart.
+- Within a session nothing changes: an item that expires while you watch still stays as read-only with Remove (D3). Only a refresh clears it.
+
+**Version numbers and conflicts.** There are two levels.
+- Each item has a version that goes up on every edit. Edit and Remove send it.
+- The cart has a version that goes up on every change. Pay sends it.
+- If the server has moved on, the request gets `409 version_conflict` together with the fresh cart, and the stale tab reloads from that answer. Nothing is overwritten.
+- I didn't use one cart-wide version for every action. With that design, another tab adding an unrelated item would make your edit conflict. It would also replace D1's specific "Short: 2 egg" with a generic conflict. Two levels block real overwrites, and they still stop a tab from paying for a cart it hasn't seen.
+- An edit that conflicts keeps the user's changes on screen. Saving again after the reload is a deliberate choice, so it goes through.
+- A repeated Pay that already succeeded still returns its order. The idempotency check comes before the version check.
+
+**Unfinished configuration survives a refresh.**
+- The builder's choices and quantity are saved to `sessionStorage` on every change. That gives each tab its own draft, so two tabs never overwrite each other's work, and the draft is gone when the tab closes.
+- A new-item draft fills the builder again after a refresh.
+- An edit draft comes back only if the server still has that item reserved. Otherwise the app says the unsaved changes were dropped.
+- The saved draft is cleaned against the current menu: unknown options and bad counts are removed. The normal rules and stock checks then show anything else that is wrong.
