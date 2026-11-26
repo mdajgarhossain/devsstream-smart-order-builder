@@ -19,6 +19,7 @@ afterEach(() => {
   resetServerNow();
   resetChaos();
   localStorage.clear(); // also resets the mock server's database
+  sessionStorage.clear(); // the builder draft (Part G)
 });
 
 afterAll(() => server.close());

@@ -68,7 +68,7 @@ export function CartPanel({
                 <span className="actions">
                   {!expired && (
                     <button type="button" onClick={() => onEdit(item.id)} disabled={editingId === item.id}>
-                      Edit
+                      {editingId === item.id ? 'Editing…' : 'Edit'}
                     </button>
                   )}
                   <button type="button" onClick={() => onRemove(item.id)}>

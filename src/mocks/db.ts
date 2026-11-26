@@ -27,6 +27,8 @@ export interface Reservation {
   /** Server time (ms). After this the stock is released and the item is read-only. */
   expiresAt: number;
   status: 'active' | 'expired';
+  /** Goes up on every edit. A tab editing or removing with an older number gets a conflict (Part G). */
+  version: number;
 }
 
 export interface ServerState {
@@ -41,6 +43,8 @@ export interface ServerState {
   orders: StoredOrder[];
   /** Checkout idempotency key -> the order it created. */
   checkoutKeys: Record<string, string>;
+  /** Goes up on every cart change (add, edit, remove, drop expired, checkout). Pay with an older one is a conflict. */
+  cartVersion: number;
 }
 
 function initialState(): ServerState {
@@ -54,6 +58,7 @@ function initialState(): ServerState {
     // They are past sales, so they do not take anything from today's stock.
     orders: priceSeedOrders(seedJson.orders as SeedOrder[], menu),
     checkoutKeys: {},
+    cartVersion: 0,
   };
 }
 
@@ -62,7 +67,9 @@ export function readState(): ServerState {
   if (raw) {
     try {
       // Spread over defaults so state saved by an older build still has every field.
-      return { ...initialState(), ...(JSON.parse(raw) as Partial<ServerState>) };
+      const saved = { ...initialState(), ...(JSON.parse(raw) as Partial<ServerState>) };
+      saved.reservations = saved.reservations.map((r) => ({ ...r, version: r.version ?? 1 }));
+      return saved;
     } catch {
       // Corrupt data: start over rather than crash the server.
     }

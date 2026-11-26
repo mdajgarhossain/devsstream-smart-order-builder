@@ -42,7 +42,9 @@ You only need the key for the sales assistant. Without one, the rest of the app 
 3. **Pay.** Enter a coupon (`MORNING15`), pick a payment method, and press Pay. The order appears in the Orders table, and "Download orders.json" exports every order.
 4. **Ask the sales assistant.** Try "How many orders?" or "Which orders were placed on 21 November?". Each answer shows the function it came from.
 
-Open the app in two tabs to see the shared stock. Both tabs talk to the same mock server state.
+Open the app in two tabs to see the shared stock. Both tabs talk to the same mock server state. If one tab changes an item or the cart, the other tab gets a conflict on its next Edit, Remove or Pay, and reloads the cart instead of overwriting the change. A refresh keeps the item you were building or editing.
+
+**"Pricing service failed. Please retry." is expected now and then.** The brief asks for a slow, flaky price endpoint: 200-1500 ms of latency and 15% random failures. When a request fails, the price preview and the cart total say so instead of showing a stale price. Press **Retry**, or change any choice, to ask again. Checkout prices the cart on its own and never fails at random, so Pay is not affected.
 
 ## Architecture
 
@@ -94,10 +96,14 @@ It returns the full breakdown, every eligible cart discount, and the coupon's st
 
 ### Mock server, cart and checkout (Parts D and E)
 
-- **Endpoints:** `GET /api/menu`, `POST /api/price`, `GET /api/cart`, `POST /api/cart/items`, `PUT /api/cart/items/:id`, `DELETE /api/cart/items/:id`, `POST /api/checkout`, `GET /api/orders`.
+- **Endpoints:** `GET /api/menu`, `POST /api/price`, `GET /api/cart`, `POST /api/cart/items`, `PUT /api/cart/items/:id`, `DELETE /api/cart/items/:id`, `DELETE /api/cart/expired`, `POST /api/checkout`, `GET /api/orders`.
 - **Shared state:** it lives in localStorage and is read on every request, so all tabs share one server.
 - **Server clock:** it runs 90 seconds ahead of the browser. Every response carries `serverTime`, and the client keeps the offset, so countdowns and coupon times use server time.
-- **Reservations:** each cart item is a reservation with `expiresAt`. Expired items are released lazily on the next request.
+- **Reservations:** each cart item is a reservation with `expiresAt`. Expired items are released lazily on the next request. On page load the app calls `DELETE /api/cart/expired`, so a refresh keeps only still-valid reservations.
+- **Versions (Part G):** each item has a version that goes up on every edit. The cart has a version that goes up on every change.
+  - Edit and Remove send the item's version, and Pay sends the cart's version.
+  - A stale request gets `409 version_conflict` along with the fresh cart, so the stale tab reloads from that same answer.
+  - Adding an item never conflicts, so another tab adding something doesn't block an edit.
 - **Double clicks:** add and checkout take an idempotency key, and the client shares an in-flight request with a second click. A double click makes one item or one order.
 - **Orders:** checkout prices the cart at the moment of Pay, creates the id and timestamp on the server, and turns reserved stock into sold stock. The seed orders are priced by the same engine at their own `createdAt` time. They don't consume stock.
 - **Chaos:** `/price` has 200-1500 ms of latency and fails 15% of the time, as the brief asks. The preview debounces by 300 ms, drops stale responses (AbortController plus a request id), and shows a Retry button. The settings live in [chaos.ts](src/mocks/chaos.ts).
@@ -112,7 +118,7 @@ It returns the full breakdown, every eligible cart discount, and the coupon's st
 
 ## Tests
 
-`npm test` runs 134 tests. Section 9 has one file per part in [src/test/acceptance/](src/test/acceptance/):
+`npm test` runs 148 tests. Section 9 has one file per part in [src/test/acceptance/](src/test/acceptance/):
 
 | File | Covers |
 |---|---|
@@ -122,6 +128,7 @@ It returns the full breakdown, every eligible cart discount, and the coupon's st
 | `part-d-cart.test.tsx` | TC-13 to TC-15, D1, D3 |
 | `part-e-checkout.test.tsx` | TC-16, TC-17 |
 | `part-f-assistant.test.tsx` | TC-18 to TC-20, assistant error messages |
+| `part-g-bonus.test.tsx` | Part G: refresh keeps only live reservations, version conflicts on Edit and Pay, drafts surviving a refresh |
 
 How the tests run:
 - The UI tests render the real `App` against the real MSW handlers, through `msw/node`.
@@ -141,10 +148,9 @@ How the tests run:
 
 ## What is unfinished
 
-- **Part G (bonus) is not done.**
-  - The cart already reloads from the server on refresh, so a refresh shows the server's reservations. There is no dedicated work beyond that.
-  - Cart changes carry no version number, so there is no version check or conflict error for two tabs.
-  - An unfinished configuration in the builder is lost on refresh.
+- **Part G (bonus) is done.** The design choices are in DECISIONS.md under "Part G".
+  - The version check only applies when a request sends a version, the way `If-Match` works in HTTP. The app always sends one.
+  - A request without a version is accepted as before.
 - No live demo URL.
 - There is no admin view for changing stock or the menu at runtime. You edit `menu.json`, then reset the data.
 - Accessibility basics are in place (labels, roles, live regions for the chat and errors), but I haven't run a full screen-reader pass.
