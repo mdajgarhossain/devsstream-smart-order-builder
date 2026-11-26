@@ -161,16 +161,8 @@ h2 {
   align-items: start;
 }
 
-.bottom-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: start;
-}
-
 @media (max-width: 960px) {
-  .workspace,
-  .bottom-row {
+  .workspace {
     grid-template-columns: 1fr;
   }
 }
@@ -725,6 +717,104 @@ label.option input {
 .chat-form input {
   flex: 1;
   padding: 0.45rem 0.65rem;
+}
+
+/* Floating sales assistant */
+
+.assistant-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(47, 111, 223, 0.35);
+  cursor: pointer;
+}
+
+.assistant-fab:hover {
+  background: #2459bd;
+}
+
+.assistant-fab[aria-expanded='true'] {
+  background: #1f4ea6;
+}
+
+.assistant-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #ff8a7a;
+  box-shadow: 0 0 0 2px var(--blue);
+}
+
+.assistant-panel {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 5rem;
+  z-index: 20;
+  width: min(420px, calc(100vw - 2.5rem));
+  max-height: calc(100vh - 6.5rem);
+  overflow-y: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.18);
+}
+
+.assistant-panel[hidden] {
+  display: none;
+}
+
+.assistant-panel .chat {
+  margin: 0;
+  box-shadow: none;
+}
+
+.assistant-panel .chat h2 {
+  padding-right: 2.5rem;
+}
+
+.assistant-panel .chat-log {
+  max-height: 300px;
+}
+
+.assistant-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.assistant-close:hover {
+  background: var(--surface-soft);
+  color: #1f2330;
+}
+
+/* Room at the bottom so the floating button never covers the last orders. */
+.app {
+  padding-bottom: 6rem;
+}
+
+@media (max-width: 520px) {
+  .assistant-panel {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
 }
 
 .sr-only {
