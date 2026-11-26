@@ -22,7 +22,10 @@ export function App({ assistantModel }: AppProps) {
 
   return (
     <main className="app">
-      <h1>Smart Order Builder</h1>
+      <header className="app-header">
+        <h1>Smart Order Builder</h1>
+        <p className="app-subtitle">Build a breakfast, reserve it, pay, and ask about sales.</p>
+      </header>
       {state.status === 'loading' && <p className="muted">Loading menu…</p>}
       {state.status === 'error' && (
         <p role="alert" className="error">
