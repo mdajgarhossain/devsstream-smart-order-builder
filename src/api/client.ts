@@ -64,11 +64,15 @@ export interface CartItem {
   /** Server time in ms. */
   expiresAt: number;
   status: 'active' | 'expired';
+  /** Goes up on every edit; sent back on Edit and Remove (Part G). */
+  version: number;
 }
 
 export interface CartResponse {
   items: CartItem[];
   stock: Usage;
+  /** The cart's version; sent back on Pay (Part G). */
+  version: number;
   serverTime: string;
 }
 
@@ -83,13 +87,19 @@ export const api = {
   getCart: () => request<CartResponse>('/api/cart'),
   addItem: (body: { idempotencyKey: string; config: Config; qty: number }) =>
     request<CartResponse & { item: CartItem }>('/api/cart/items', { method: 'POST', body: JSON.stringify(body) }),
-  updateItem: (id: string, body: { config: Config; qty: number }) =>
+  /** Page load: drop expired items so a refresh keeps only still-valid reservations. */
+  dropExpired: () => request<CartResponse>('/api/cart/expired', { method: 'DELETE' }),
+  updateItem: (id: string, body: { config: Config; qty: number; baseVersion?: number }) =>
     request<CartResponse & { item: CartItem }>(`/api/cart/items/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
-  removeItem: (id: string) => request<CartResponse>(`/api/cart/items/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  checkout: (body: { idempotencyKey: string; paymentMethod: string; couponCode: string | null }) =>
+  removeItem: (id: string, baseVersion?: number) =>
+    request<CartResponse>(
+      `/api/cart/items/${encodeURIComponent(id)}${baseVersion === undefined ? '' : `?baseVersion=${baseVersion}`}`,
+      { method: 'DELETE' },
+    ),
+  checkout: (body: { idempotencyKey: string; paymentMethod: string; couponCode: string | null; baseVersion?: number }) =>
     request<CartResponse & { order: StoredOrder }>('/api/checkout', { method: 'POST', body: JSON.stringify(body) }),
   getOrders: () => request<{ orders: StoredOrder[]; serverTime: string }>('/api/orders'),
 };

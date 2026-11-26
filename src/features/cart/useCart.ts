@@ -20,12 +20,16 @@ export function isExpired(item: CartItem, now: number): boolean {
 export function useCart() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [stock, setStock] = useState<Usage | null>(null);
+  /** The cart version this tab last saw. Sent with Pay; items carry their own version for Edit/Remove. */
+  const [version, setVersion] = useState<number | undefined>(undefined);
+  const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const now = useServerNow();
 
-  const apply = useCallback((snapshot: Pick<CartResponse, 'items' | 'stock'>) => {
+  const apply = useCallback((snapshot: Pick<CartResponse, 'items' | 'stock' | 'version'>) => {
     setItems(snapshot.items);
     setStock(snapshot.stock);
+    setVersion(snapshot.version);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -37,9 +41,17 @@ export function useCart() {
     }
   }, [apply]);
 
+  // Page load (Part G): the server drops expired items, so a refresh keeps only still-valid reservations.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    api
+      .dropExpired()
+      .then((snapshot) => {
+        apply(snapshot);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => setLoadError(error instanceof ApiError ? error.message : 'Could not load the cart'))
+      .finally(() => setLoaded(true));
+  }, [apply]);
 
   // When a countdown reaches 0 (server time), ask the server so the released stock shows up.
   const refreshedForExpiry = useRef(new Set<string>());
@@ -99,16 +111,18 @@ export function useCart() {
     [apply, fail],
   );
 
+  const itemVersion = useCallback((id: string) => items.find((item) => item.id === id)?.version, [items]);
+
   const update = useCallback(
     (id: string, config: Config, qty: number): Promise<Mutation> =>
       api
-        .updateItem(id, { config, qty })
+        .updateItem(id, { config, qty, baseVersion: itemVersion(id) })
         .then((response): Mutation => {
           apply(response);
           return { ok: true };
         })
         .catch(fail),
-    [apply, fail],
+    [apply, fail, itemVersion],
   );
 
   // Pay: one idempotency key per attempt (same items, method and coupon), reused on Retry.
@@ -125,7 +139,7 @@ export function useCart() {
       if (attempt.promise) return attempt.promise;
 
       attempt.promise = api
-        .checkout({ idempotencyKey: attempt.key, paymentMethod, couponCode: couponCode.trim() || null })
+        .checkout({ idempotencyKey: attempt.key, paymentMethod, couponCode: couponCode.trim() || null, baseVersion: version })
         .then((response): CheckoutResult => {
           apply(response);
           if (payAttempt.current === attempt) payAttempt.current = null;
@@ -137,20 +151,20 @@ export function useCart() {
         });
       return attempt.promise;
     },
-    [items, apply, fail],
+    [items, version, apply, fail],
   );
 
   const remove = useCallback(
     (id: string): Promise<Mutation> =>
       api
-        .removeItem(id)
+        .removeItem(id, itemVersion(id))
         .then((response): Mutation => {
           apply(response);
           return { ok: true };
         })
         .catch(fail),
-    [apply, fail],
+    [apply, fail, itemVersion],
   );
 
-  return { items, stock, loadError, now, refresh, add, update, remove, checkout };
+  return { items, stock, loaded, loadError, now, refresh, add, update, remove, checkout };
 }
